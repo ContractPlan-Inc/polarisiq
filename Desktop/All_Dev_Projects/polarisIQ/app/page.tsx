@@ -10,7 +10,10 @@ export default function Home() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-blue-600">PolarisIQ</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-blue-600">PolarisIQ</h1>
+              <p className="text-sm text-gray-600">for Saval Foodservice</p>
+            </div>
             <Link
               href="/assistant"
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -33,8 +36,11 @@ export default function Home() {
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
               Your Specialty Foods Expert
             </h2>
-            <p className="text-xl text-gray-600 mb-8">
-              AI-powered virtual meeting assistant designed for broadline sales reps
+            <p className="text-xl text-gray-600 mb-2">
+              AI-powered virtual meeting assistant for Saval broadline sales reps
+            </p>
+            <p className="text-lg text-gray-500 mb-8">
+              Expert knowledge at your fingertips during every customer visit
             </p>
           </div>
 
@@ -46,8 +52,8 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               }
-              title="Product Expertise"
-              description="Instant access to specialty foods knowledge, dietary restrictions, and ingredient details"
+              title="Expert Knowledge Base"
+              description="8 culinary experts covering pastry, ethnic cuisines, proteins, dietary needs, and more"
             />
             <FeatureCard
               icon={
@@ -94,10 +100,10 @@ export default function Home() {
             Built for Sales Reps in the Field
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <QuickFeature title="Allergen Alerts" />
-            <QuickFeature title="Product Substitutions" />
-            <QuickFeature title="Dietary Compliance" />
-            <QuickFeature title="Pricing Guidance" />
+            <QuickFeature title="Allergen & Dietary Info" />
+            <QuickFeature title="Pastry & Techniques" />
+            <QuickFeature title="Ethnic Cuisine Expertise" />
+            <QuickFeature title="Meeting Notes & Actions" />
           </div>
         </div>
       </section>
