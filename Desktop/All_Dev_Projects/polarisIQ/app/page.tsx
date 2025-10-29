@@ -78,10 +78,16 @@ export default function Home() {
           {/* CTA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
+              href="/voice"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors shadow-lg"
+            >
+              🎤 Voice Assistant (iPad)
+            </Link>
+            <Link
               href="/assistant"
               className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
             >
-              Start Meeting Assistant
+              Start Text Assistant
             </Link>
             <Link
               href="/features"
