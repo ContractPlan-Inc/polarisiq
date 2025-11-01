@@ -1,6 +1,29 @@
 # PolarisIQ - Specialty Foods Expert Assistant for Saval Foodservice
 
-**Fully Functional Virtual Meeting Assistant** for broadline sales representatives specializing in specialty foods, pastry, and ethnic cuisine.
+**Commercial-Grade SaaS Application - Production Ready**
+
+Fully functional AI-powered meeting assistant for broadline sales representatives specializing in specialty foods, pastry, and ethnic cuisine.
+
+## 🚀 Quick Deploy (One Command)
+
+```bash
+npm install
+bash scripts/quick-deploy.sh
+```
+
+**That's it!** The script will guide you through:
+1. Neon database setup
+2. Clerk authentication configuration
+3. Stripe payment integration
+4. Automatic Vercel deployment
+
+**Or use the interactive setup:**
+```bash
+npm run setup    # Configure all services
+npm run deploy   # Deploy to Vercel
+```
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
 ---
 
