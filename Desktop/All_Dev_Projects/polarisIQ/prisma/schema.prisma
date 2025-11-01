@@ -1,0 +1,170 @@
+// Neon Database Schema for PolarisIQ
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model syncs with Clerk
+model User {
+  id        String   @id // Clerk user ID
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  subscription Subscription?
+  usage        Usage[]
+  meetings     Meeting[]
+  actionItems  ActionItem[]
+
+  @@map("users")
+}
+
+// Subscription management
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  stripeCustomerId     String    @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  stripeCurrentPeriodEnd DateTime?
+
+  plan                 Plan      @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@map("subscriptions")
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+  CUSTOM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  PAUSED
+  INCOMPLETE
+}
+
+// Usage tracking
+model Usage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      UsageType
+  count     Int      @default(1)
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("usage")
+}
+
+enum UsageType {
+  TEXT_QUERY
+  VOICE_QUERY
+  EXPERT_SWITCH
+  PITCH_LOADED
+  MEETING_STARTED
+  EXPORT_NOTES
+}
+
+// Meeting history
+model Meeting {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String?
+  customerContext String?
+  mode        MeetingMode @default(TEXT)
+  duration    Int?     // seconds
+
+  messages    Json     // Stored conversation
+  experts     String[] // Expert IDs used
+  pitchId     String?  // Sales pitch ID if used
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  actionItems ActionItem[]
+
+  @@index([userId, createdAt])
+  @@map("meetings")
+}
+
+enum MeetingMode {
+  TEXT
+  VOICE
+  LIVE
+}
+
+// Action items from meetings
+model ActionItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meetingId String?
+  meeting   Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+
+  content   String
+  completed Boolean  @default(false)
+  dueDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, completed])
+  @@map("action_items")
+}
+
+// Analytics events
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  eventName  String
+  properties Json?
+  createdAt  DateTime @default(now())
+
+  @@index([eventName, createdAt])
+  @@map("analytics_events")
+}
+
+// Waitlist for beta/features and contact requests
+model Waitlist {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  company     String?
+  phone       String?
+  role        String?
+  teamSize    String?
+  message     String?
+  requestType String   @default("demo") // demo, pricing, enterprise, support, other
+  plan        Plan     @default(PROFESSIONAL)
+  notes       String?
+
+  createdAt DateTime @default(now())
+
+  @@map("waitlist")
+}
