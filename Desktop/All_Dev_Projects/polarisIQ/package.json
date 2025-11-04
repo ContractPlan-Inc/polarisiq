@@ -5,10 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
     "setup": "node scripts/setup-services.js",
     "deploy": "bash scripts/deploy.sh",
     "db:push": "prisma db push",
@@ -29,7 +28,6 @@
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "@sentry/nextjs": "^7.100.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
