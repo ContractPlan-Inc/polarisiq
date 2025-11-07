@@ -1,0 +1,372 @@
+// PolarisIQ - Legendary Multi-Industry Sales & Meeting Assistant
+// Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// USER MANAGEMENT
+// ============================================================================
+
+model User {
+  id                String   @id @default(cuid())
+  clerkId           String   @unique
+  email             String   @unique
+  firstName         String?
+  lastName          String?
+  imageUrl          String?
+
+  // Subscription
+  subscriptionTier  String   @default("free") // free, starter, professional, enterprise
+  subscriptionStatus String  @default("inactive") // inactive, active, canceled, past_due
+  stripeCustomerId  String?  @unique
+  stripeSubscriptionId String? @unique
+  subscriptionEndsAt DateTime?
+
+  // Usage tracking
+  monthlyQueries    Int      @default(0)
+  monthlyMeetingMinutes Int   @default(0)
+  storageUsedMB     Int      @default(0)
+  lastResetAt       DateTime @default(now())
+
+  // Preferences
+  preferences       Json     @default("{}")
+  activeSkillPacks  String[]
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastLoginAt       DateTime?
+
+  // Relations
+  conversations     Conversation[]
+  meetings          Meeting[]
+  contextFiles      ContextFile[]
+  skillPacks        SkillPack[]
+  actionItems       ActionItem[]
+  analytics         Analytics[]
+
+  @@index([clerkId])
+  @@index([email])
+  @@index([stripeCustomerId])
+}
+
+// ============================================================================
+// SKILL PACKS - Core of the system
+// ============================================================================
+
+model SkillPack {
+  id                String   @id @default(cuid())
+
+  // Metadata
+  name              String
+  slug              String   @unique
+  industry          String   // food_beverage, contractors, real_estate, etc.
+  version           String   @default("1.0.0")
+  icon              String?
+  description       String   @db.Text
+  coverImage        String?
+
+  // Configuration
+  isPublic          Boolean  @default(true)
+  isActive          Boolean  @default(true)
+  isPremium         Boolean  @default(false)
+  requiredTier      String   @default("free") // free, starter, professional, enterprise
+
+  // Content (stored as JSON for flexibility)
+  products          Json     @default("[]")
+  pricing           Json     @default("[]")
+  competitors       Json     @default("[]")
+  objectionHandlers Json     @default("[]")
+  salesScripts      Json     @default("[]")
+  faqs              Json     @default("[]")
+  regulations       Json     @default("[]")
+  expertPersonas    Json     @default("[]")
+
+  // AI Configuration
+  systemPrompt      String   @db.Text
+  interjectionRules Json     @default("[]")
+  customData        Json     @default("{}")
+
+  // Usage stats
+  usageCount        Int      @default(0)
+  averageRating     Float    @default(0)
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  publishedAt       DateTime?
+
+  // Relations
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  knowledgeItems    KnowledgeItem[]
+
+  @@index([slug])
+  @@index([industry])
+  @@index([userId])
+}
+
+// ============================================================================
+// CONVERSATIONS & MEETINGS
+// ============================================================================
+
+model Conversation {
+  id                String   @id @default(cuid())
+
+  // Metadata
+  title             String?
+  type              String   @default("sales_call") // sales_call, support, consultation, etc.
+  status            String   @default("active") // active, completed, archived
+
+  // Context
+  skillPackIds      String[]
+  customerName      String?
+  customerCompany   String?
+  customerEmail     String?
+
+  // Content
+  messages          Json     @default("[]")
+  interjections     Json     @default("[]")
+  summary           String?  @db.Text
+  keyPoints         String[]
+  sentiment         String?  // positive, neutral, negative
+
+  // Outcomes
+  outcome           String?  // won, lost, follow_up, etc.
+  dealValue         Float?
+  nextSteps         String[] @default([])
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  completedAt       DateTime?
+
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actionItems       ActionItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+}
+
+model Meeting {
+  id                String   @id @default(cuid())
+
+  // Metadata
+  title             String
+  type              String   @default("sales") // sales, internal, training, etc.
+  status            String   @default("scheduled") // scheduled, in_progress, completed, canceled
+
+  // Participants
+  hostName          String?
+  participants      Json     @default("[]") // array of {name, email, role}
+
+  // Recording & Transcription
+  recordingUrl      String?
+  transcriptUrl     String?
+  transcript        String?  @db.Text
+  duration          Int?     // in seconds
+
+  // AI Analysis
+  summary           String?  @db.Text
+  keyPoints         String[] @default([])
+  decisions         String[] @default([])
+  sentiment         String?  // positive, neutral, negative
+  topics            String[] @default([])
+
+  // Timestamps
+  scheduledAt       DateTime
+  startedAt         DateTime?
+  endedAt           DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actionItems       ActionItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+// ============================================================================
+// CONTEXT & KNOWLEDGE
+// ============================================================================
+
+model ContextFile {
+  id                String   @id @default(cuid())
+
+  // Metadata
+  name              String
+  originalName      String
+  fileType          String   // pdf, docx, xlsx, csv, txt, image, etc.
+  mimeType          String
+  size              Int      // in bytes
+
+  // Storage
+  storageUrl        String   // URL to the file in blob storage
+  thumbnailUrl      String?
+
+  // Content extraction
+  extractedText     String?  @db.Text
+  extractedData     Json     @default("{}")
+  pageCount         Int?
+
+  // Categorization
+  category          String?  // catalog, pricing, manual, contract, etc.
+  tags              String[] @default([])
+  skillPackIds      String[] @default([])
+
+  // Processing status
+  processingStatus  String   @default("pending") // pending, processing, completed, failed
+  processingError   String?  @db.Text
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastAccessedAt    DateTime?
+
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  knowledgeItems    KnowledgeItem[]
+
+  @@index([userId])
+  @@index([category])
+  @@index([processingStatus])
+}
+
+model KnowledgeItem {
+  id                String   @id @default(cuid())
+
+  // Content
+  title             String
+  content           String   @db.Text
+  type              String   // fact, product, pricing, procedure, objection_handler, etc.
+
+  // Source
+  sourceType        String   // file, manual_entry, web_scrape, api, etc.
+  sourceId          String?
+  sourceUrl         String?
+
+  // Metadata
+  category          String?
+  tags              String[] @default([])
+  importance        Int      @default(5) // 1-10 scale
+
+  // Embeddings for semantic search
+  embedding         String?  @db.Text // vector embedding as JSON string
+
+  // Usage
+  accessCount       Int      @default(0)
+  lastAccessedAt    DateTime?
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  skillPackId       String?
+  skillPack         SkillPack? @relation(fields: [skillPackId], references: [id], onDelete: Cascade)
+  contextFileId     String?
+  contextFile       ContextFile? @relation(fields: [contextFileId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([category])
+  @@index([skillPackId])
+  @@index([contextFileId])
+}
+
+// ============================================================================
+// ACTIONS & TASKS
+// ============================================================================
+
+model ActionItem {
+  id                String   @id @default(cuid())
+
+  // Content
+  title             String
+  description       String?  @db.Text
+  priority          String   @default("medium") // low, medium, high, urgent
+  status            String   @default("pending") // pending, in_progress, completed, canceled
+
+  // Context
+  type              String   // follow_up, task, reminder, research, etc.
+  sourceType        String   // conversation, meeting, manual
+  sourceId          String?
+
+  // Assignment
+  assignedTo        String?  // email or name
+  customerName      String?
+  customerEmail     String?
+
+  // Timing
+  dueDate           DateTime?
+  reminderDate      DateTime?
+  completedAt       DateTime?
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId    String?
+  conversation      Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  meetingId         String?
+  meeting           Meeting? @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+}
+
+// ============================================================================
+// ANALYTICS & INSIGHTS
+// ============================================================================
+
+model Analytics {
+  id                String   @id @default(cuid())
+
+  // Metrics
+  metric            String   // conversations_count, meetings_count, deal_value, etc.
+  value             Float
+  unit              String?  // count, dollars, minutes, percentage, etc.
+
+  // Dimensions
+  dimension1        String?  // e.g., industry, skill_pack, tier
+  dimension2        String?
+
+  // Time period
+  period            String   // daily, weekly, monthly
+  periodStart       DateTime
+  periodEnd         DateTime
+
+  // Metadata
+  metadata          Json     @default("{}")
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([metric])
+  @@index([periodStart])
+}
