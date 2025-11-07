@@ -1,5 +1,0 @@
-{
-  "": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "next build"
-}
